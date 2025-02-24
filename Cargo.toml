@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-clap = "4.5.30"
+clap = { version = "4", features = ["derive"] }
 hidapi = {features = ["windows-native"], version = "2.6.3"}
