@@ -4,6 +4,7 @@
   },
   "rust-analyzer.cargo.features": ["gui"],
   "[rust]": {
+    "editor.wordWrap": "off",
     "editor.codeActionsOnSave": {
       "source.organizeImports": "explicit"
     }
