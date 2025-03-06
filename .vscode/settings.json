@@ -1,6 +1,11 @@
 {
-    "files.exclude": {
-        "**/target": true
-    },
-    "rust-analyzer.cargo.features": ["gui"]
+  "files.exclude": {
+    "**/target": true
+  },
+  "rust-analyzer.cargo.features": ["gui"],
+  "[rust]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  }
 }
