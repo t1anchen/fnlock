@@ -1,6 +1,6 @@
 extern crate hidapi;
 
-use keyboard::fnlock;
+use keyboard::{find_device, fnlock};
 use log::debug;
 use std::env;
 
@@ -13,7 +13,7 @@ mod gui;
 
 fn api_main(opts: &Opts) {
   let to_be_locked = !opts.unlock;
-  keyboard::find_device().map(|k380| fnlock(k380, to_be_locked));
+  fnlock(find_device(), to_be_locked);
 }
 
 #[derive(Parser, Clone, Debug, Default)]

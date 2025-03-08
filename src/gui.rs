@@ -1,7 +1,11 @@
 use eframe::egui;
+use log::info;
 
 use crate::{
-  keyboard::{list_devices, DeviceInfo},
+  keyboard::{
+    find_device_from_deviceinfo, fnlock, get_api_context, is_device_available,
+    list_devices, DeviceInfo,
+  },
   Opts,
 };
 pub struct FnlockGuiApp {
@@ -10,11 +14,13 @@ pub struct FnlockGuiApp {
   states: Vec<String>,
   devices: Vec<DeviceInfo>,
   n_devices: usize,
+  to_be_lock: bool,
 }
 
 impl FnlockGuiApp {
   fn default_with_opts(cmd_opts: Opts) -> Self {
-    let devices = list_devices();
+    let devices = list_devices(get_api_context().as_ref());
+    let to_be_lock = !cmd_opts.unlock;
     Self {
       n_devices: devices.len(),
       cmd_opts,
@@ -34,12 +40,14 @@ impl FnlockGuiApp {
         .collect(),
       states: vec![String::new(); devices.len()],
       devices,
+      to_be_lock,
     }
   }
 }
 
 impl eframe::App for FnlockGuiApp {
   fn update(&mut self, ctx: &eframe::egui::Context, frame: &mut eframe::Frame) {
+    let api = get_api_context();
     egui::TopBottomPanel::top("menubar").show(ctx, |ui| {
       egui::menu::bar(ui, |ui| {
         // File menu
@@ -87,34 +95,79 @@ impl eframe::App for FnlockGuiApp {
     // would like to make it simpler.
     egui::CentralPanel::default().show(ctx, |ui| {
       egui::Grid::new("dashboard")
-        .num_columns(3)
+        .num_columns(8)
         .spacing([40.0, 2.0])
         .striped(true)
         .show(ui, |ui| {
-          ui.strong("keyboard");
+          ui.strong("Vendor Name");
+          ui.strong("Product Name");
+          ui.strong("Vendor ID");
+          ui.strong("Product ID");
+          ui.strong("Usage");
+          ui.strong("Usage Page");
           ui.strong("state");
           ui.strong("action");
           ui.end_row();
 
           for device_id in 0..self.n_devices {
-            ui.add(egui::Label::new(self.names[device_id].clone()));
+            ui.add(egui::Label::new(
+              self.devices[device_id].vendor_name.clone(),
+            ));
+            ui.add(egui::Label::new(
+              self.devices[device_id].product_name.clone(),
+            ));
+            ui.add(egui::Label::new(format!(
+              "{:04X}",
+              self.devices[device_id].vendor_id
+            )));
+            ui.add(egui::Label::new(format!(
+              "{:04X}",
+              self.devices[device_id].product_id
+            )));
+            ui.add(egui::Label::new(format!(
+              "{:04X}",
+              self.devices[device_id].usage
+            )));
+            ui.add(egui::Label::new(format!(
+              "{:04X}",
+              self.devices[device_id].usage_page
+            )));
             let states = &mut self.states;
             ui.add(egui::Label::new(&states[device_id]));
-            ui.horizontal_centered(|ui| {
-              let button_lock = egui::Button::new("Lock");
-              let button_unlock = egui::Button::new("Unlock");
-              ui.add_enabled(false, button_lock);
-              if ui.add(button_unlock).clicked() {
-                states[device_id] = String::from("Changed");
-              }
-            });
+            if is_device_available(&self.devices[device_id]) {
+              ui.horizontal_centered(|ui| {
+                if ui.button("Lock").clicked() {
+                  fnlock(
+                    find_device_from_deviceinfo(
+                      api.as_ref(),
+                      &self.devices[device_id],
+                    ),
+                    true,
+                  );
+                  self.states[device_id] = "Locked".to_owned();
+                  info!(
+                    "device {:?} fn key has been locked",
+                    self.devices[device_id]
+                  );
+                } else if ui.button("Unlocked").clicked() {
+                  fnlock(
+                    find_device_from_deviceinfo(
+                      api.as_ref(),
+                      &self.devices[device_id],
+                    ),
+                    false,
+                  );
+                  self.states[device_id] = "Unlocked".to_owned();
+                  info!(
+                    "device {:?} fn key has been unlocked",
+                    self.devices[device_id]
+                  );
+                }
+              });
+            }
+
             ui.end_row();
           }
-
-          ui.add(egui::Label::new("keyboard2"));
-          if ui.button("Lock").clicked() {}
-          if ui.button("Unlock").clicked() {}
-          ui.end_row();
         });
     });
   }
