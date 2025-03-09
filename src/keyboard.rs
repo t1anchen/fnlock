@@ -84,15 +84,10 @@ pub fn find_device_from_deviceinfo(
   api: Option<&HidApi>,
   device_info: &DeviceInfo,
 ) -> Option<HidDevice> {
-  if let Some(_api) = api {
-    if let Ok(device) = device_info.hid_device_info.open_device(_api) {
-      Some(device)
-    } else {
-      None
-    }
-  } else {
-    None
-  }
+  api.and_then(|_api| match device_info.hid_device_info.open_device(_api) {
+    Ok(device) => Some(device),
+    _ => None,
+  })
 }
 
 pub fn find_device() -> Option<HidDevice> {
