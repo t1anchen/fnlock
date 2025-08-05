@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-hidapi = {features = ["windows-native"], version = "2.6.3"}
+hidapi = {features = ["windows-native", "macos-shared-device"], version = "2.6.3"}
 eframe = { version = "0.31.0", optional = true}
 log ={ version = "*"}
 env_logger = { version = "0.10"}
